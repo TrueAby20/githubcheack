@@ -12,29 +12,89 @@
     let score = 0;
     let gameOver = false;
 
-    // draw a triangular player ship pointing up
+    // draw a more detailed player ship using canvas paths and gradients
     function drawPlayerShip(p) {
-        ctx.fillStyle = 'lime';
+        const cx = p.x + p.w/2;
+        const cy = p.y + p.h/2;
+
+        // body gradient
+        const grad = ctx.createLinearGradient(p.x, p.y, p.x + p.w, p.y + p.h);
+        grad.addColorStop(0, '#6aff6a');
+        grad.addColorStop(1, '#00b300');
+
+        ctx.save();
+        ctx.translate(0,0);
+
+        // main hull (rounded triangle-like)
         ctx.beginPath();
-        ctx.moveTo(p.x + p.w/2, p.y); // tip
-        ctx.lineTo(p.x, p.y + p.h); // bottom left
-        ctx.lineTo(p.x + p.w, p.y + p.h); // bottom right
+        ctx.moveTo(cx, p.y); // nose
+        ctx.quadraticCurveTo(p.x, p.y + p.h*0.25, p.x + p.w*0.15, p.y + p.h*0.9);
+        ctx.lineTo(p.x + p.w*0.85, p.y + p.h*0.9);
+        ctx.quadraticCurveTo(p.x + p.w, p.y + p.h*0.25, cx, p.y);
         ctx.closePath();
+        ctx.fillStyle = grad;
         ctx.fill();
-        // small cockpit
-        ctx.fillStyle = 'black';
-        ctx.fillRect(p.x + p.w/2 - 3, p.y + p.h/3, 6, 6);
+
+        // left wing
+        ctx.beginPath();
+        ctx.moveTo(p.x + p.w*0.15, p.y + p.h*0.9);
+        ctx.lineTo(p.x - p.w*0.25, p.y + p.h*0.6);
+        ctx.lineTo(p.x + p.w*0.15, p.y + p.h*0.6);
+        ctx.closePath();
+        ctx.fillStyle = '#44cc44';
+        ctx.fill();
+
+        // right wing
+        ctx.beginPath();
+        ctx.moveTo(p.x + p.w*0.85, p.y + p.h*0.9);
+        ctx.lineTo(p.x + p.w + p.w*0.25, p.y + p.h*0.6);
+        ctx.lineTo(p.x + p.w*0.85, p.y + p.h*0.6);
+        ctx.closePath();
+        ctx.fillStyle = '#44cc44';
+        ctx.fill();
+
+        // cockpit
+        ctx.beginPath();
+        ctx.ellipse(cx, p.y + p.h*0.45, p.w*0.18, p.h*0.12, 0, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fill();
+
+        // engine glow
+        const glow = ctx.createRadialGradient(cx, p.y + p.h*0.95, 0, cx, p.y + p.h*0.95, p.w);
+        glow.addColorStop(0, 'rgba(255,165,0,0.9)');
+        glow.addColorStop(1, 'rgba(255,165,0,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.ellipse(cx, p.y + p.h*1.02, p.w*0.5, p.h*0.3, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.restore();
     }
 
-    // draw an inverted triangular enemy ship pointing down
+    // draw a stylized enemy ship
     function drawEnemyShip(e) {
-        ctx.fillStyle = 'red';
+        const cx = e.x + e.w/2;
+        // body gradient
+        const grad = ctx.createLinearGradient(e.x, e.y, e.x + e.w, e.y + e.h);
+        grad.addColorStop(0, '#ff7b7b');
+        grad.addColorStop(1, '#b30000');
+
+        ctx.save();
         ctx.beginPath();
-        ctx.moveTo(e.x + e.w/2, e.y + e.h); // tip (bottom)
-        ctx.lineTo(e.x, e.y); // top left
-        ctx.lineTo(e.x + e.w, e.y); // top right
+        ctx.moveTo(cx, e.y + e.h); // nose downward
+        ctx.quadraticCurveTo(e.x + e.w, e.y + e.h*0.75, e.x + e.w*0.85, e.y + e.h*0.1);
+        ctx.lineTo(e.x + e.w*0.15, e.y + e.h*0.1);
+        ctx.quadraticCurveTo(e.x, e.y + e.h*0.75, cx, e.y + e.h);
         ctx.closePath();
+        ctx.fillStyle = grad;
         ctx.fill();
+
+        // enemy eye / cockpit
+        ctx.beginPath();
+        ctx.ellipse(cx, e.y + e.h*0.5, e.w*0.12, e.h*0.08, 0, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fill();
+        ctx.restore();
     }
 
     function drawBullet(b) {
