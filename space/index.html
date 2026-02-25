@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Shooter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Space Shooter</h1>
+    <div id="scoreBoard">
+        <span id="scoreLabel">Score: 0</span>
+    </div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <p>Use arrow keys to move, space to shoot. Points awarded for each enemy destroyed. When you collide, enter your name to add your score to the leaderboard. Reload page to restart.</p>
+    <div id="leaderboard" hidden>
+        <h2>Leaderboard</h2>
+        <ol id="leaderList"></ol>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

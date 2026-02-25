@@ -1,0 +1,35 @@
+body {
+    font-family: Arial, sans-serif;
+    background: black;
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+}
+
+canvas {
+    border: 2px solid white;
+    background: #000;
+    display: block;
+    margin: 0 auto;
+}
+
+#scoreBoard {
+    color: white;
+    font-size: 1.2em;
+    margin-bottom: 5px;
+}
+
+#leaderboard {
+    color: white;
+    margin-top: 15px;
+}
+
+#leaderboard h2 {
+    margin: 5px 0;
+}
+
+#leaderList {
+    text-align: left;
+    display: inline-block;
+}
