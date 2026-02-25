@@ -8,6 +8,9 @@
     const player = { x: canvas.width/2 - 15, y: canvas.height - 40, w:30, h:30, speed:5 };
     const bullets = [];
     const enemies = [];
+    let boss = null;
+    const bossBullets = [];
+    let bossCooldownFrame = 0; // frame number before which boss cannot spawn
     let frames = 0;
     let score = 0;
     let gameOver = false;
@@ -114,6 +117,10 @@
         }
 
         frames++;
+        // spawn boss when score threshold reached and cooldown passed
+        if (!boss && score >= 100 && frames > bossCooldownFrame) {
+            spawnBoss();
+        }
         // move player
         if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
         if (keys['ArrowRight'] && player.x + player.w < canvas.width) player.x += player.speed;
@@ -126,8 +133,8 @@
             b.y -= b.speed;
             if (b.y < 0) bullets.splice(i, 1);
         });
-        // spawn enemies
-        if (frames % 60 === 0) {
+        // spawn enemies (pause while boss active)
+        if (!boss && frames % 60 === 0) {
             enemies.push({ x: Math.random() * (canvas.width - 30), y: -30, w:30, h:30, speed:2 });
         }
         // move enemies
@@ -135,6 +142,18 @@
             e.y += e.speed;
             if (e.y > canvas.height) enemies.splice(i, 1);
         });
+        // update boss and its bullets if present
+        if (boss) {
+            updateBoss();
+            bossBullets.forEach((bb, idx) => {
+                bb.y += bb.speed;
+                if (bb.y > canvas.height) bossBullets.splice(idx, 1);
+                // check collision with player
+                if (bb.x < player.x + player.w && bb.x + bb.w > player.x && bb.y < player.y + player.h && bb.y + bb.h > player.y) {
+                    gameOver = true;
+                }
+            });
+        }
         // collisions
         enemies.forEach((e, ei) => {
             // check for player collision: game over
@@ -152,6 +171,26 @@
             });
         });
 
+        // bullets vs boss collision
+        if (boss) {
+            bullets.forEach((b, bi) => {
+                if (!boss) return; // boss may be set to null during iteration
+                if (b.x < boss.x + boss.w && b.x + b.w > boss.x && b.y < boss.y + boss.h && b.y + b.h > boss.y) {
+                    bullets.splice(bi, 1);
+                    boss.health -= 5; // damage per hit
+                    if (boss.health <= 0) {
+                        // boss defeated
+                        boss = null;
+                        score += 200;
+                        updateScore();
+                        bossBullets.length = 0;
+                        // set cooldown (e.g., 10 seconds at ~60fps -> 600 frames)
+                        bossCooldownFrame = frames + 600;
+                    }
+                }
+            });
+        }
+
         draw();
         requestAnimationFrame(update);
     }
@@ -162,6 +201,26 @@
             saveScore(name || 'Player', score);
         }
         showLeaderboard();
+    }
+
+    // boss functions
+    function spawnBoss() {
+        boss = { x: canvas.width/2 - 60, y: 40, w:120, h:60, health: 100, dir: 1, speed: 1.2, shootTimer: 0 };
+    }
+
+    function updateBoss() {
+        if (!boss) return;
+        boss.x += boss.dir * boss.speed;
+        if (boss.x < 10) { boss.x = 10; boss.dir = 1; }
+        if (boss.x + boss.w > canvas.width - 10) { boss.x = canvas.width - boss.w - 10; boss.dir = -1; }
+        boss.shootTimer++;
+        if (boss.shootTimer > 40) {
+            // shoot a spread of bullets
+            bossBullets.push({ x: boss.x + boss.w*0.25, y: boss.y + boss.h, w:6, h:10, speed:3 });
+            bossBullets.push({ x: boss.x + boss.w*0.5, y: boss.y + boss.h, w:6, h:10, speed:3 });
+            bossBullets.push({ x: boss.x + boss.w*0.75, y: boss.y + boss.h, w:6, h:10, speed:3 });
+            boss.shootTimer = 0;
+        }
     }
 
     function draw() {
@@ -181,11 +240,53 @@
         drawPlayerShip(player);
         bullets.forEach(b => drawBullet(b));
         enemies.forEach(e => drawEnemyShip(e));
+        // draw boss and its bullets
+        if (boss) {
+            drawBoss(boss);
+            bossBullets.forEach(bb => drawBossBullet(bb));
+            // boss health bar
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fillRect(boss.x, boss.y - 12, boss.w, 8);
+            ctx.fillStyle = 'lime';
+            const hpWidth = Math.max(0, (boss.health / 100) * boss.w);
+            ctx.fillRect(boss.x, boss.y - 12, hpWidth, 8);
+        }
 
         // debug overlay / score
         ctx.fillStyle = 'white';
         ctx.font = '16px sans-serif';
         ctx.fillText('Score: ' + score, 10, 20);
+    }
+
+    function drawBoss(b) {
+        // stylized boss shape
+        ctx.save();
+        const cx = b.x + b.w/2;
+        ctx.translate(0,0);
+        const grad = ctx.createLinearGradient(b.x, b.y, b.x + b.w, b.y + b.h);
+        grad.addColorStop(0, '#ffaa00');
+        grad.addColorStop(1, '#aa4400');
+        ctx.beginPath();
+        ctx.moveTo(cx, b.y);
+        ctx.lineTo(b.x + b.w*0.9, b.y + b.h*0.3);
+        ctx.lineTo(b.x + b.w, b.y + b.h*0.6);
+        ctx.lineTo(b.x + b.w*0.6, b.y + b.h);
+        ctx.lineTo(b.x + b.w*0.4, b.y + b.h);
+        ctx.lineTo(b.x, b.y + b.h*0.6);
+        ctx.lineTo(b.x + b.w*0.1, b.y + b.h*0.3);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+        // windows
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(b.x + b.w*0.25, b.y + b.h*0.35, b.w*0.12, b.h*0.15);
+        ctx.fillRect(b.x + b.w*0.55, b.y + b.h*0.35, b.w*0.12, b.h*0.15);
+        ctx.restore();
+    }
+
+    function drawBossBullet(bb) {
+        ctx.fillStyle = 'orange';
+        ctx.fillRect(bb.x, bb.y, bb.w, bb.h);
     }
 
     window.addEventListener('keydown', e => { keys[e.key] = true; });
@@ -223,29 +324,3 @@
         alert('Game initialization error — check console for details');
     }
 })();
-(function(){
-    // basic 3D shooter using Three.js
-    const container = document.getElementById('gameContainer');
-    const keys = {};
-    let score = 0;
-    let gameOver = false;
-
-    let scene, camera, renderer;
-    try {
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, 400/600, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(400,600);
-        container.appendChild(renderer.domElement);
-    } catch (err) {
-        console.error('Three.js initialization failed', err);
-        const warning = document.getElementById('webgl-warning');
-        if (warning) warning.style.display = 'block';
-        return; // don't continue if renderer not created
-    }
-
-        if (!renderer.getContext()) {
-            const warning = document.getElementById('webgl-warning');
-            if (warning) warning.style.display = 'block';
-        }
-    })();
