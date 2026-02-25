@@ -3,39 +3,61 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Minimal Calculator</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>APPA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            margin: 0;
+            padding: 40px;
+            text-align: center;
+            overflow: hidden;
+        }
+        h1 {
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .nav-button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 1.2em;
+            text-decoration: none;
+            color: #fff;
+            background: #007acc;
+            border-radius: 6px;
+            transition: background 0.2s;
+            position: relative;
+            z-index: 1;
+        }
+        .nav-button:hover {
+            background: #005fa3;
+        }
+        /* animated circles */
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 10s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-100px) scale(1.2); }
+            100% { transform: translateY(0) scale(1); }
+        }
+    </style>
 </head>
 <body>
-    <h1>Simple Web Calculator</h1>
+    <h1>Welcome to APPA</h1>
+    <p>Select an app:</p>
+    <a href="calculator/index.html" class="nav-button">Calculator</a>
+    <!-- future links can be added here -->
 
-    <div id="calculator">
-        <input type="text" id="display" readonly />
-        <div id="buttons">
-            <!-- digits -->
-            <button class="btn" data-value="7">7</button>
-            <button class="btn" data-value="8">8</button>
-            <button class="btn" data-value="9">9</button>
-            <button class="btn op" data-value="/">÷</button>
-
-            <button class="btn" data-value="4">4</button>
-            <button class="btn" data-value="5">5</button>
-            <button class="btn" data-value="6">6</button>
-            <button class="btn op" data-value="*">×</button>
-
-            <button class="btn" data-value="1">1</button>
-            <button class="btn" data-value="2">2</button>
-            <button class="btn" data-value="3">3</button>
-            <button class="btn op" data-value="-">−</button>
-
-            <button class="btn" data-value="0">0</button>
-            <button class="btn" data-value=".">.</button>
-            <button class="btn" id="equals" data-value="=">=</button>
-            <button class="btn op" data-value="+">+</button>
-        </div>
-        <button id="clear">C</button>
-    </div>
-
-    <script src="calculator.js"></script>
+    <!-- decorative floating circles -->
+    <div class="circle" style="width:100px;height:100px;top:10%;left:20%;background:#FF6B6B;"></div>
+    <div class="circle" style="width:150px;height:150px;top:30%;left:70%;background:#F7C948;"></div>
+    <div class="circle" style="width:80px;height:80px;top:60%;left:40%;background:#4ECDC4;"></div>
+    <div class="circle" style="width:120px;height:120px;top:80%;left:80%;background:#556270;"></div>
 </body>
 </html>
