@@ -33,3 +33,35 @@ canvas {
     text-align: left;
     display: inline-block;
 }
+
+#controls {
+    margin: 8px 0 12px 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+.touch-controls {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 20;
+}
+
+.touch-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 24px;
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+@media (min-width:600px) {
+    .touch-controls { display: none; }
+}

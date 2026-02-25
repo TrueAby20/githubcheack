@@ -11,11 +11,28 @@
     <div id="scoreBoard">
         <span id="scoreLabel">Score: 0</span>
     </div>
+    <div id="controls">
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="normal" selected>Normal</option>
+            <option value="hard">Hard</option>
+        </select>
+        <label><input type="checkbox" id="soundToggle" checked> Sound</label>
+        <label><input type="checkbox" id="spriteToggle" checked> Sprites</label>
+        <button id="shareBtn">Share Leaderboard</button>
+    </div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <p>Use arrow keys to move, space to shoot. Points awarded for each enemy destroyed. When you collide, enter your name to add your score to the leaderboard. Reload page to restart.</p>
     <div id="leaderboard" hidden>
         <h2>Leaderboard</h2>
         <ol id="leaderList"></ol>
+    </div>
+    <!-- touch controls for mobile -->
+    <div id="touchControls" class="touch-controls">
+        <button id="leftBtn" class="touch-btn">◀</button>
+        <button id="shootBtn" class="touch-btn">●</button>
+        <button id="rightBtn" class="touch-btn">▶</button>
     </div>
     <script src="game.js"></script>
 </body>

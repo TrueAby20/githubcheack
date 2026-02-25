@@ -11,6 +11,47 @@
     let boss = null;
     const bossBullets = [];
     let bossCooldownFrame = 0; // frame number before which boss cannot spawn
+    // feature flags / settings
+    let audioEnabled = true;
+    let spritesEnabled = true;
+    let spawnInterval = 60; // frames between enemy spawns (difficulty)
+    let enemySpeedMultiplier = 1;
+    // audio
+    let audioCtx = null;
+    function ensureAudio() {
+        if (!audioCtx) {
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+        }
+    }
+    function playBeep(freq, duration, type='sine') {
+        if (!audioEnabled) return;
+        ensureAudio();
+        if (!audioCtx) return;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        o.connect(g);
+        g.connect(audioCtx.destination);
+        g.gain.setValueAtTime(0.001, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.1, audioCtx.currentTime + 0.01);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration/1000);
+        o.stop(audioCtx.currentTime + duration/1000 + 0.02);
+    }
+    // sprites (SVG dataURLs)
+    let playerImg = new Image();
+    let enemyImg = new Image();
+    let spritesLoaded = false;
+    function loadSprites() {
+        const playerSVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><polygon points='30,0 0,60 60,60' fill='%236aff6a' stroke='%23000000' stroke-width='2'/><rect x='26' y='22' width='8' height='8' rx='2' fill='black' /></svg>`;
+        const enemySVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><path d='M30,60 L10,20 L50,20 Z' fill='%23ff7b7b' stroke='%23000000' stroke-width='2'/></svg>`;
+        playerImg.onload = () => { if (enemyImg.complete) spritesLoaded = true; };
+        enemyImg.onload = () => { if (playerImg.complete) spritesLoaded = true; };
+        playerImg.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(playerSVG);
+        enemyImg.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(enemySVG);
+    }
+    loadSprites();
     let frames = 0;
     let score = 0;
     let gameOver = false;
@@ -134,8 +175,8 @@
             if (b.y < 0) bullets.splice(i, 1);
         });
         // spawn enemies (pause while boss active)
-        if (!boss && frames % 60 === 0) {
-            enemies.push({ x: Math.random() * (canvas.width - 30), y: -30, w:30, h:30, speed:2 });
+        if (!boss && frames % spawnInterval === 0) {
+            enemies.push({ x: Math.random() * (canvas.width - 30), y: -30, w:30, h:30, speed:2 * enemySpeedMultiplier });
         }
         // move enemies
         enemies.forEach((e, i) => {
@@ -237,9 +278,20 @@
             ctx.fillRect(sx, sy, 1, 1);
         }
 
-        drawPlayerShip(player);
+        // draw player (sprite or vector)
+        if (spritesEnabled && spritesLoaded) {
+            try { ctx.drawImage(playerImg, player.x, player.y, player.w, player.h); } catch(e) { drawPlayerShip(player); }
+        } else {
+            drawPlayerShip(player);
+        }
         bullets.forEach(b => drawBullet(b));
-        enemies.forEach(e => drawEnemyShip(e));
+        enemies.forEach(e => {
+            if (spritesEnabled && spritesLoaded) {
+                try { ctx.drawImage(enemyImg, e.x, e.y, e.w, e.h); } catch(e) { drawEnemyShip(e); }
+            } else {
+                drawEnemyShip(e);
+            }
+        });
         // draw boss and its bullets
         if (boss) {
             drawBoss(boss);
@@ -288,6 +340,57 @@
         ctx.fillStyle = 'orange';
         ctx.fillRect(bb.x, bb.y, bb.w, bb.h);
     }
+
+    // wire UI controls if present
+    try {
+        const diff = document.getElementById('difficulty');
+        const soundToggle = document.getElementById('soundToggle');
+        const spriteToggle = document.getElementById('spriteToggle');
+        const shareBtn = document.getElementById('shareBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const shootBtn = document.getElementById('shootBtn');
+        if (diff) {
+            function applyDifficulty() {
+                const v = diff.value;
+                if (v === 'easy') { spawnInterval = 90; enemySpeedMultiplier = 0.8; }
+                else if (v === 'normal') { spawnInterval = 60; enemySpeedMultiplier = 1; }
+                else { spawnInterval = 40; enemySpeedMultiplier = 1.5; }
+            }
+            diff.addEventListener('change', applyDifficulty);
+            applyDifficulty();
+        }
+        if (soundToggle) {
+            soundToggle.checked = audioEnabled;
+            soundToggle.addEventListener('change', ()=>{ audioEnabled = !!soundToggle.checked; if (audioEnabled) ensureAudio(); });
+        }
+        if (spriteToggle) {
+            spriteToggle.checked = spritesEnabled;
+            spriteToggle.addEventListener('change', ()=>{ spritesEnabled = !!spriteToggle.checked; });
+        }
+        if (shareBtn) {
+            shareBtn.addEventListener('click', ()=>{
+                const raw = localStorage.getItem('space_leaderboard') || '[]';
+                navigator.clipboard?.writeText(raw).then(()=>{ alert('Leaderboard copied to clipboard'); }).catch(()=>{});
+                const a = document.createElement('a');
+                const blob = new Blob([raw], {type:'application/json'});
+                a.href = URL.createObjectURL(blob);
+                a.download = 'leaderboard.json';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            });
+        }
+        // touch controls
+        function bindTouch(btn, key) {
+            if (!btn) return;
+            btn.addEventListener('pointerdown', (e)=>{ e.preventDefault(); keys[key]=true; });
+            btn.addEventListener('pointerup', (e)=>{ e.preventDefault(); keys[key]=false; });
+            btn.addEventListener('pointerleave', (e)=>{ e.preventDefault(); keys[key]=false; });
+        }
+        bindTouch(leftBtn, 'ArrowLeft');
+        bindTouch(rightBtn, 'ArrowRight');
+        bindTouch(shootBtn, ' ');
+    } catch (err) { console.warn('UI wiring skipped', err); }
 
     window.addEventListener('keydown', e => { keys[e.key] = true; });
     window.addEventListener('keyup', e => { keys[e.key] = false; });
