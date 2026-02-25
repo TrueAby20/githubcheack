@@ -12,9 +12,34 @@
     let score = 0;
     let gameOver = false;
 
-    function drawRect(obj, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(obj.x, obj.y, obj.w, obj.h);
+    // draw a triangular player ship pointing up
+    function drawPlayerShip(p) {
+        ctx.fillStyle = 'lime';
+        ctx.beginPath();
+        ctx.moveTo(p.x + p.w/2, p.y); // tip
+        ctx.lineTo(p.x, p.y + p.h); // bottom left
+        ctx.lineTo(p.x + p.w, p.y + p.h); // bottom right
+        ctx.closePath();
+        ctx.fill();
+        // small cockpit
+        ctx.fillStyle = 'black';
+        ctx.fillRect(p.x + p.w/2 - 3, p.y + p.h/3, 6, 6);
+    }
+
+    // draw an inverted triangular enemy ship pointing down
+    function drawEnemyShip(e) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.moveTo(e.x + e.w/2, e.y + e.h); // tip (bottom)
+        ctx.lineTo(e.x, e.y); // top left
+        ctx.lineTo(e.x + e.w, e.y); // top right
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    function drawBullet(b) {
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(b.x, b.y, b.w, b.h);
     }
 
     function updateScore() {
@@ -81,10 +106,23 @@
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawRect(player, 'lime');
-        bullets.forEach(b => drawRect(b, 'yellow'));
-        enemies.forEach(e => drawRect(e, 'red'));
-        // debug overlay
+        // background stars
+        ctx.fillStyle = '#001';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // draw stars (simple, low-cost)
+        ctx.fillStyle = 'white';
+        for (let i = 0; i < 20; i++) {
+            const sx = (i * 37) % canvas.width;
+            const sy = (i * 53 + frames) % canvas.height;
+            ctx.fillRect(sx, sy, 1, 1);
+        }
+
+        drawPlayerShip(player);
+        bullets.forEach(b => drawBullet(b));
+        enemies.forEach(e => drawEnemyShip(e));
+
+        // debug overlay / score
         ctx.fillStyle = 'white';
         ctx.font = '16px sans-serif';
         ctx.fillText('Score: ' + score, 10, 20);
